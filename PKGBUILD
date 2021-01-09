@@ -9,7 +9,8 @@ url='https://github.com/apognu/tuigreet'
 license=(GPL3)
 conflicts=(greetd-tuigreet-bin greetd-tuigreet-git)
 
-arch=(x86_64)
+arch=('x86_64' 'aarch64')
+
 makedepends=(rust scdoc)
 
 source=("tuigreet-${pkgver}.tar.gz::${url}/archive/${pkgver}.tar.gz"
@@ -21,7 +22,7 @@ build() {
   cd "tuigreet-${pkgver}"
 
   cargo build --release
-  scdoc < contrib/man/tuigreet-1.scd > contrib/man/tuigreet-1.roff
+  scdoc <contrib/man/tuigreet-1.scd >contrib/man/tuigreet-1.roff
 }
 
 package() {

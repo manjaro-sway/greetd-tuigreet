@@ -1,0 +1,20 @@
+name: bootstrap
+on: 
+  workflow_dispatch:
+  schedule:
+    - cron:  '0 1-23/2 * * *'
+
+jobs:
+  botstrap_actions:
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.BOOTSTRAP_WORKFLOWS }}
+      - 
+        id: bootstrap
+        uses: Manjaro-Sway/bootstrap-package-actions@master
+        with:
+          upstream: "https://aur.archlinux.org/greetd-tuigreet.git"
