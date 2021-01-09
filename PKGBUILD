@@ -10,7 +10,7 @@ license=(GPL3)
 conflicts=(greetd-tuigreet-bin greetd-tuigreet-git)
 
 arch=(x86_64)
-depends=()
+depends=(greetd)
 makedepends=(rust)
 
 source=("${url}/archive/${pkgver}.tar.gz")
@@ -24,6 +24,6 @@ build() {
 package() {
   install -Dm755 "${srcdir}/tuigreet-${pkgver}/target/release/tuigreet" "${pkgdir}/usr/bin/tuigreet"
   install -Dm644 "${srcdir}/tuigreet-${pkgver}/LICENSE" "${pkgdir}/usr/share/licenses/tuigreet/LICENSE"
-
-  install -Dd -ogreeter -ggreeter -m755 "${pkgdir}/var/cache/tuigreet"
+ 
+  install -Dd -ggreeter -m775 "${pkgdir}/var/cache/tuigreet"
 }
