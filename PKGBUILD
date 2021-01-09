@@ -10,6 +10,7 @@ license=(GPL3)
 conflicts=(greetd-tuigreet-bin greetd-tuigreet-git)
 
 arch=(x86_64)
+
 makedepends=(rust scdoc)
 
 source=("${url}/archive/${pkgver}.tar.gz"
