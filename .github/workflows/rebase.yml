@@ -6,7 +6,7 @@ on:
     - cron:  '*/30 * * * *'
   
 env:
-  UPSTREAM_GIT_HTTPS: "https://aur.archlinux.org/greetd-tuigreet.git"
+  UPSTREAM_GIT_HTTPS: "https://aur.archlinux.org/autotiling.git"
 
 jobs:
   rebase:
