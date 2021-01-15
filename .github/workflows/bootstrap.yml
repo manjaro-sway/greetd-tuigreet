@@ -2,7 +2,7 @@ name: bootstrap
 on: 
   workflow_dispatch:
   schedule:
-    - cron:  '0 2 * * *'
+    - cron:  '0 1-23/2 * * *'
 
 jobs:
   botstrap_actions:
@@ -17,4 +17,4 @@ jobs:
         id: bootstrap
         uses: Manjaro-Sway/bootstrap-package-actions@master
         with:
-          upstream: https://aur.archlinux.org/greetd-tuigreet.git
+          upstream: https://aur.archlinux.org/autotiling.git

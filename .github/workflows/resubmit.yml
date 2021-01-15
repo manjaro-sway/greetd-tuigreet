@@ -2,6 +2,8 @@ name: resubmit the release
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron:  '20 1-23/2 * * *'
 
 jobs:
   resubmit:
@@ -16,7 +18,7 @@ jobs:
           echo "VERSION=$(echo $LATEST_INFO | jq -r '.tag_name')" >> $GITHUB_ENV
       - 
         name: dispatch_aarch64
-        if: ${{ env.FILE_NAME_AARCH64 }} !== ""
+        if: ${{ env.FILE_NAME_AARCH64 != "" }} 
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DISPATCH }}
@@ -25,7 +27,7 @@ jobs:
           client-payload: '{ "repository": "${{ github.repository }}", "version": "${{ env.VERSION }}", "file_name": "${{ env.FILE_NAME_AARCH64 }}"}'
       - 
         name: dispatch_x86_64
-        if: ${{ env.FILE_NAME_X86_64 }} !== ""
+        if: ${{ env.FILE_NAME_X86_64  != "" }}
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DISPATCH }}
