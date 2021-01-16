@@ -27,7 +27,7 @@ jobs:
           client-payload: '{ "repository": "${{ github.repository }}", "version": "${{ env.VERSION }}", "file_name": "${{ env.FILE_NAME_AARCH64 }}"}'
       - 
         name: dispatch_x86_64
-        if: ${{ env.FILE_NAME_X86_64  != "" }}
+        if: ${{ env.FILE_NAME_X86_64 != "" }}
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DISPATCH }}

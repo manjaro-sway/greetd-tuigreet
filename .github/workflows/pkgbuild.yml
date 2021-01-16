@@ -7,6 +7,9 @@ on:
       - master
       - main
 
+env:
+  TRUSTED_GPG: "https://aur.archlinux.org/autotiling.git"
+
 jobs:
   pkgbuild:
     runs-on: ubuntu-latest
@@ -29,6 +32,7 @@ jobs:
           echo "AARCH64=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=//' | grep -q aarch64 && echo 'true' || echo false)" >> $GITHUB_ENV
           echo "X86_64=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=//' | grep -q -E -i -w '(x86_64|any)' && echo 'true' || echo false)" >> $GITHUB_ENV
           echo "VERSION=$(cat PKGBUILD | grep pkgver= | sed -e 's/^pkgver=//')-$(cat PKGBUILD | grep pkgrel= | sed -e 's/^pkgrel=//')" >> $GITHUB_ENV
+          [[ -n "$TRUSTED_GPG" ]] && sudo -u builder gpg --recv-key ${TRUSTED_GPG}
       - 
         name: create_release
         id: release
