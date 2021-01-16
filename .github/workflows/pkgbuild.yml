@@ -42,7 +42,7 @@ jobs:
           prerelease: false
       -
         name: pkgbuild_x86_64
-        if: env.X86_64 == 'true’
+        if: ${{ env.X86_64 == 'true’ }}
         run: |
           sudo -u builder makepkg -s --noconfirm
 
@@ -51,7 +51,7 @@ jobs:
           echo "VERSION=$(find ./pkg -name ".PKGINFO" -exec cat {} \; | grep pkgver | sed -e 's/^pkgver = //')" >> $GITHUB_ENV
       - 
         name: upload_release_x86
-        if: env.X86_64 == 'true’
+        if: ${{ env.X86_64 == 'true’ }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,7 +62,7 @@ jobs:
           asset_content_type: application/zstd
       - 
         name: dispatch_x86_64
-        if: env.X86_64 == 'true’
+        if: ${{ env.X86_64 == 'true’ }}
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DISPATCH }}
@@ -71,14 +71,14 @@ jobs:
           client-payload: '{ "repository": "${{ github.repository }}", "version": "${{ env.VERSION }}", "file_name": "${{ env.FILE_NAME_X86_64 }}"}'
       -
         name: pkgbuild_aarch64
-        if: env.AARCH64 == 'true’
+        if: ${{ env.AARCH64 == 'true’ }}
         run: |
           sudo -u builder aarch64-makepkg -s --noconfirm
 
           echo "FILE_NAME_AARCH64=$(basename $(find . -type f -regextype posix-extended -regex '^.*(aarch64).*'))" >> $GITHUB_ENV
       - 
         name: upload_release_aarch64
-        if: env.AARCH64 == 'true’
+        if: ${{ env.AARCH64 == 'true’ }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -89,7 +89,7 @@ jobs:
           asset_content_type: application/zstd
       - 
         name: dispatch_aarch64
-        if: env.AARCH64 == 'true’
+        if: ${{ env.AARCH64 == 'true’ }}
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DISPATCH }}
