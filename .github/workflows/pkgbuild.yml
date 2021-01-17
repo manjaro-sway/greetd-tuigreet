@@ -29,9 +29,11 @@ jobs:
           echo "AARCH64=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=//' | grep -q aarch64 && echo 'true' || echo false)" >> $GITHUB_ENV
           echo "X86_64=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=//' | grep -q -E -i -w '(x86_64|any)' && echo 'true' || echo false)" >> $GITHUB_ENV
           echo "VERSION=$(cat PKGBUILD | grep pkgver= | sed -e 's/^pkgver=//')-$(cat PKGBUILD | grep pkgrel= | sed -e 's/^pkgrel=//')" >> $GITHUB_ENV
-          while IFS="" read -r key || [ -n "$key" ]; do 
-            sudo -u builder gpg --recv-key $key
-          done <.github/additional_gpg
+          if [ -f ".github/additional_gpg" ]; then
+            while IFS="" read -r key || [ -n "$key" ]; do 
+              sudo -u builder gpg --recv-key $key
+            done <.github/additional_gpg
+          fi
           echo "REPO_NAME=$(echo ${{ github.repository }} | sed 's|/|_|g')" >> $GITHUB_ENV
       - 
         name: create_release

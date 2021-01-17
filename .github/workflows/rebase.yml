@@ -19,7 +19,8 @@ jobs:
         token: ${{ secrets.PUSH_AND_TRIGGER }}
     - 
       name: add ssh pk
-      run: mkdir -p ~/.ssh/id_rsa && echo ${{ secrets.SSH_BASE64 }} | base64 -d >~/.ssh/id_rsa
+      if: ${{ contains(env.UPSTREAM_GIT, 'ssh') }}
+      run: mkdir -p ~/.ssh/id_rsa && echo "${{ secrets.SSH_BASE64 }}" | base64 -d >~/.ssh/id_rsa
     - 
       name: check if behind upstream
       run: |
