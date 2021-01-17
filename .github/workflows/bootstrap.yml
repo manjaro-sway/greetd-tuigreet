@@ -17,4 +17,5 @@ jobs:
         id: bootstrap
         uses: Manjaro-Sway/bootstrap-package-actions@master
         with:
-          upstream: https://aur.archlinux.org/autotiling.git
+          upstream: "https://aur.archlinux.org/autotiling.git"
+          trusted-keys: ""
