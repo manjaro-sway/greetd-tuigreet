@@ -46,7 +46,6 @@ jobs:
           prerelease: false
       -
         name: pkgbuild_x86_64
-        if: pkgbuild_x86_64
         if: ${{ env.X86_64 == 'true' }}
         run: |
           exec 1>>log 2> >(tee -a x86_64.${REPO_NAME}.$(date +%s).log >&2)
