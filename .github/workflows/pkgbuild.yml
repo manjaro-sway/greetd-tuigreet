@@ -52,9 +52,7 @@ jobs:
         run: |
           exec 1>>log 2> >(tee -a x86_64.${REPO_NAME}.$(date +%s).log >&2)
           sudo -u builder makepkg -s --noconfirm 
-
           echo "FILE_NAME_X86_64=$(basename $(find . -type f  \( -name "*x86_64*.zst" -o -name "*any*.zst" \)))" >> $GITHUB_ENV
-          echo "VERSION=$(find ./pkg -name ".PKGINFO" -exec cat {} \; | grep pkgver | sed -e 's/^pkgver = //')" >> $GITHUB_ENV
       - 
         name: upload_release_x86
         if: ${{ env.X86_64 == 'true' }}
@@ -81,11 +79,11 @@ jobs:
         if: ${{ env.AARCH64 == 'true' }}
         run: |
           exec 1>>log 2> >(tee -a x86_64.${REPO_NAME}.$(date +%s).log >&2)
-
           sudo -u builder aarch64-makepkg -s --noconfirm | tee aarch64.${REPO_NAME}.$(date +%s).log
-
           echo "FILE_NAME_AARCH64=$(basename $(find . -type f -regextype posix-extended -regex '^.*(aarch64).*'))" >> $GITHUB_ENV
-          echo "VERSION=$(find ./pkg -name ".PKGINFO" -exec cat {} \; | grep pkgver | sed -e 's/^pkgver = //')" >> $GITHUB_ENV
+      -
+        name: get version
+        run: echo "VERSION="$(find ./pkg -name ".PKGINFO" -exec cat {} \; | grep pkgver | sed -e 's/^pkgver = //')"" >> $GITHUB_ENV
       - 
         name: upload_release_aarch64
         if: ${{ env.AARCH64 == 'true' }}
@@ -112,17 +110,12 @@ jobs:
         with:
           name: logs
           path: ./*.log
-      - name: Dump steps context
-        if: ${{ failure() }}
-        env:
-          STEPS_CONTEXT: ${{ toJson(steps) }}
-        run: echo "$STEPS_CONTEXT"
       - 
         name: delete release if pkgbuild failed
-        if: ${{ failure() }}
+        if: ${{ failure() && (steps.pkgbuild_aarch64.outcome  != 'success' || steps.pkgbuild_x86_64.outcome != 'success') }}
         uses: dev-drprasad/delete-tag-and-release@v0.1.2
         with:
           delete_release: true
-          tag_name: ${{ env.VERSION && (steps.pkgbuild_aarch64.outcome  != 'success' || steps.pkgbuild_x86_64.outcome != 'success')}}
+          tag_name: ${{ env.VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
