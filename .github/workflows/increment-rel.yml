@@ -1,4 +1,4 @@
-name: increment release
+name: increment pkgrel
 
 on:
   workflow_dispatch:
