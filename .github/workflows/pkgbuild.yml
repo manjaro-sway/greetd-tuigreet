@@ -50,7 +50,6 @@ jobs:
         name: pkgbuild_x86_64
         if: ${{ env.X86_64 == 'true' }}
         run: |
-          exec 1>>log 2> >(tee -a x86_64.${REPO_NAME}.$(date +%s).log >&2)
           sudo -u builder makepkg -s --noconfirm 
           echo "FILE_NAME_X86_64=$(basename $(find . -type f  \( -name "*x86_64*.zst" -o -name "*any*.zst" \)))" >> $GITHUB_ENV
       - 
@@ -78,7 +77,6 @@ jobs:
         id: pkgbuild_aarch64
         if: ${{ env.AARCH64 == 'true' }}
         run: |
-          exec 1>>log 2> >(tee -a x86_64.${REPO_NAME}.$(date +%s).log >&2)
           sudo -u builder aarch64-makepkg -s --noconfirm | tee aarch64.${REPO_NAME}.$(date +%s).log
           echo "FILE_NAME_AARCH64=$(basename $(find . -type f -regextype posix-extended -regex '^.*(aarch64).*'))" >> $GITHUB_ENV
       -
