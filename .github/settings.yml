@@ -1,0 +1,5 @@
+# inherits settings from https://github.com/Manjaro-Sway/.github/blob/main/.github/settings.yml
+_extends: .github
+repository:
+  homepage: "https://aur.archlinux.org/autotiling.git"
+# you can extend settings using https://probot.github.io/apps/settings/
