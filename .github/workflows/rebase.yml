@@ -31,5 +31,5 @@ jobs:
       name: rebase
       if: ${{ failure() }}
       run: |
-        git rebase
+        git rebase upstream/$(git branch --show-current)
         git push --force-with-lease
