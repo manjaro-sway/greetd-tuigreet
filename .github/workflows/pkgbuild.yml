@@ -1,4 +1,4 @@
-name: pkgbuild
+name: pkgbuild_next
 
 on:
   workflow_dispatch:
@@ -8,121 +8,109 @@ on:
       - main
 
 jobs:
-  pkgbuild:
-    runs-on: ubuntu-latest
-    container:
-      image: docker://manjarosway/manjaro-package:latest
+  prepare:
+    runs-on: ubuntu-20.04
+    name: prepare
     steps:
-      -   
-        name: cancel_concurrent
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ github.token }}
       - 
-        name: checkout
         uses: actions/checkout@v2
       - 
-        name: prepare
+        name: check-updatable
+        id: check
         run: |
-          pacman -Syyu --noconfirm
-          sudo chown -R builder .
-          echo "AARCH64=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=//' | grep -q aarch64 && echo 'true' || echo false)" >> $GITHUB_ENV
-          echo "X86_64=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=//' | grep -q -E -i -w '(x86_64|any)' && echo 'true' || echo false)" >> $GITHUB_ENV
-          echo "VERSION=$(cat PKGBUILD | grep pkgver= | sed -e 's/^pkgver=//')-$(cat PKGBUILD | grep pkgrel= | sed -e 's/^pkgrel=//')" >> $GITHUB_ENV
-          if [ -f ".github/additional_gpg" ]; then
-            while IFS="" read -r key || [ -n "$key" ]; do 
-              sudo -u builder gpg --recv-key $key
-            done <.github/additional_gpg
-          fi
-          echo "REPO_NAME=$(echo ${{ github.repository }} | sed 's|/|_|g')" >> $GITHUB_ENV
-      - 
-        name: check updateable
-        run: |
-          if [ $(git tag -l "${{ env.VERSION }}") ]; then
-            echo "IS_UPDATE=true" >> $GITHUB_ENV
-          else
-            echo "IS_UPDATE=false" >> $GITHUB_ENV
-          fi
+          VERSION=$(cat PKGBUILD | grep pkgver= | sed -e 's/^pkgver=//')-$(cat PKGBUILD | grep pkgrel= | sed -e 's/^pkgrel=//')
+          echo "ARCHITECTURES=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=(\(.*\))/\1/')" >>$GITHUB_ENV
+          echo "VERSION=${VERSION}" >>$GITHUB_ENV
+          git fetch --tags
+          git rev-list "${VERSION}" >/dev/null && \
+            echo "::set-output name=updatable::false" || \
+            echo "::set-output name=updatable::true"
+      -
+        run: echo ${{ steps.check.outputs.updatable }}
       - 
         name: create_release
         id: release
         uses: actions/create-release@v1
-        if: ${{ env.IS_UPDATE == 'true' }}
+        if: ${{ steps.check.outputs.updatable == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.VERSION }}
-          release_name: Release ${{ env.VERSION }}
+          release_name: ${{ env.VERSION }}
           draft: false
           prerelease: false
-      -
-        name: pkgbuild_x86_64
-        if: ${{ env.IS_UPDATE == 'true' && env.X86_64 == 'true' }}
-        run: |
-          sudo -u builder makepkg -s --noconfirm 
-          echo "FILE_NAME_X86_64=$(basename $(find . -type f  \( -name "*x86_64*.zst" -o -name "*any*.zst" \)))" >> $GITHUB_ENV
+    outputs:
+      updatable: ${{ steps.check.outputs.updatable }}
+      architectures: ${{ env.ARCHITECTURES }}
+      version: ${{ env.VERSION }}
+      upload_url: ${{ steps.release.outputs.upload_url }}
+  pkgbuild:
+    runs-on: ubuntu-20.04
+    name: ${{ matrix.distro }} ${{ matrix.arch }}
+    needs: [prepare]
+    if: ${{ needs.prepare.outputs.updatable == 'true' }}
+    strategy:
+      matrix:
+        include:
+          - arch: aarch64
+            distro: manjaro_latest
+            archlinux_arch: aarch64
+          - arch: amd64
+            distro: manjaro_latest
+            archlinux_arch: x86_64
+    steps:
       - 
-        name: upload_release_x86
-        if: ${{ env.IS_UPDATE == 'true' && env.X86_64 == 'true' }}
+        uses: actions/checkout@v2
+      -
+        name: get-additional-gpg
+        run: |
+          echo "ADDITIONAL_GPG=$(cat .github/additional_gpg)" >>$GITHUB_ENV
+      - 
+        uses: Manjaro-Sway/run-on-arch-action@master
+        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
+        name: build
+        id: build
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          setup: |
+            mkdir -p "${PWD}/artifacts"
+          dockerRunArgs: |
+            --volume "${PWD}/artifacts:/artifacts"
+            --cap-add=SYS_ADMIN
+          shell: /bin/sh
+          install: |
+            if [ -n "${{ env.ADDITIONAL_GPG }}" ]; then
+              for key in "${{ env.ADDITIONAL_GPG }}"; do
+                sudo -u builder gpg --recv-key $key
+              done
+            fi
+          run: |
+            chown builder $PWD
+            sudo -u builder makepkg -fsAc --noconfirm --noprogressbar
+            cp *.pkg.tar.zst /artifacts/
+      - 
+        name: determine-filename
+        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
+        run: echo "FILE_NAME=$(basename $(find ./artifacts/ -type f  \( -name "*.pkg.tar.zst" \)))" >> $GITHUB_ENV
+      - 
+        name: release
+        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./${{ env.FILE_NAME_X86_64 }}
-          asset_name: ${{ env.FILE_NAME_X86_64 }}
+          upload_url:  ${{ needs.prepare.outputs.upload_url }}
+          asset_path: "./artifacts/${{ env.FILE_NAME }}"
+          asset_name: ${{ env.FILE_NAME }}
           asset_content_type: application/zstd
       - 
-        name: dispatch_x86_64
-        if: ${{ env.IS_UPDATE == 'true' && env.X86_64 == 'true' }}
+        name: dispatch
+        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DISPATCH }}
           repository: manjaro-sway/packages
           event-type: package_update
-          client-payload: '{ "repository": "${{ github.repository }}", "version": "${{ env.VERSION }}", "file_name": "${{ env.FILE_NAME_X86_64 }}"}'
-      -
-        name: pkgbuild_aarch64
-        id: pkgbuild_aarch64
-        if: ${{ env.IS_UPDATE == 'true' && env.AARCH64 == 'true' }}
-        run: |
-          sudo -u builder aarch64-makepkg -s --noconfirm | tee aarch64.${REPO_NAME}.$(date +%s).log
-          echo "FILE_NAME_AARCH64=$(basename $(find . -type f -regextype posix-extended -regex '^.*(aarch64).*'))" >> $GITHUB_ENV
-      -
-        name: get version
-        run: echo "VERSION="$(find ./pkg -name ".PKGINFO" -exec cat {} \; | grep pkgver | sed -e 's/^pkgver = //')"" >> $GITHUB_ENV
-      - 
-        name: upload_release_aarch64
-        if: ${{ env.IS_UPDATE == 'true' && env.AARCH64 == 'true' }}
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: ./${{ env.FILE_NAME_AARCH64 }}
-          asset_name: ${{ env.FILE_NAME_AARCH64 }}
-          asset_content_type: application/zstd
-      - 
-        name: dispatch_aarch64
-        if: ${{ env.IS_UPDATE == 'true' && env.AARCH64 == 'true' }}
-        uses: peter-evans/repository-dispatch@v1
-        with:
-          token: ${{ secrets.DISPATCH }}
-          repository: manjaro-sway/packages
-          event-type: package_update
-          client-payload: '{ "repository": "${{ github.repository }}", "version": "${{ env.VERSION }}", "file_name": "${{ env.FILE_NAME_AARCH64 }}"}'
-      - 
-        name: upload logs
-        uses: actions/upload-artifact@v2
-        with:
-          name: logs
-          path: ./*.log
-      - 
-        name: delete release if pkgbuild failed
-        if: ${{ failure() && steps.release.outcome == 'success' && (steps.pkgbuild_aarch64.outcome != 'success' || steps.pkgbuild_x86_64.outcome != 'success') }}
-        uses: dev-drprasad/delete-tag-and-release@v0.1.3
-        with:
-          delete_release: true
-          tag_name: ${{ env.VERSION }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          client-payload: '{ "repository": "${{ github.repository }}", "version": "${{ needs.prepare.outputs.version }}", "file_name": "${{ env.FILE_NAME }}"}'
