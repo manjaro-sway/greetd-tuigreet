@@ -25,8 +25,6 @@ jobs:
           git rev-list "${VERSION}" >/dev/null && \
             echo "::set-output name=updatable::false" || \
             echo "::set-output name=updatable::true"
-      -
-        run: echo ${{ steps.check.outputs.updatable }}
       - 
         name: create_release
         id: release
@@ -63,11 +61,18 @@ jobs:
         uses: actions/checkout@v2
       -
         name: get-additional-gpg
-        run: |
-          echo "ADDITIONAL_GPG=$(cat .github/additional_gpg)" >>$GITHUB_ENV
+        run: echo "ADDITIONAL_GPG=$(cat .github/additional_gpg)" >>$GITHUB_ENV
+      -
+        name: any-build
+        if: ${{ ( contains(needs.prepare.outputs.architectures, 'any') && matrix.archlinux_arch == 'x86_64' ) }}
+        run: echo "BUILD=true" >>$GITHUB_ENV
+      -
+        name: arch-build
+        if: ${{ contains(needs.prepare.outputs.architectures, matrix.archlinux_arch) }}
+        run: echo "BUILD=true" >>$GITHUB_ENV
       - 
         uses: Manjaro-Sway/run-on-arch-action@master
-        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
+        if: ${{ env.BUILD == 'true' }}
         name: build
         id: build
         with:
@@ -86,17 +91,19 @@ jobs:
                 sudo -u builder gpg --recv-key $key
               done
             fi
+            sed -i '/^\[core\]/i \[manjaro-sway\]\nSigLevel = Optional TrustAll\nServer = https://packages.manjaro-sway.download/$arch\n' /etc/pacman.conf
+            pacman -Sy
           run: |
             chown builder $PWD
             sudo -u builder makepkg -fsAc --noconfirm --noprogressbar
             cp *.pkg.tar.zst /artifacts/
       - 
         name: determine-filename
-        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
+        if: ${{ env.BUILD == 'true' }}
         run: echo "FILE_NAME=$(basename $(find ./artifacts/ -type f  \( -name "*.pkg.tar.zst" \)))" >> $GITHUB_ENV
       - 
         name: release
-        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
+        if: ${{ env.BUILD == 'true' }}
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -107,7 +114,7 @@ jobs:
           asset_content_type: application/zstd
       - 
         name: dispatch
-        if: contains(needs.prepare.outputs.architectures, matrix.archlinux_arch)
+        if: ${{ env.BUILD == 'true' }}
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.DISPATCH }}
