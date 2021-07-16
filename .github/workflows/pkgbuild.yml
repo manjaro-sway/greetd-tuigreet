@@ -16,7 +16,7 @@ jobs:
       - name: check-updatable
         id: check
         run: |
-          VERSION=$(cat PKGBUILD | grep pkgver= | sed -e 's/^pkgver=//')-$(cat PKGBUILD | grep pkgrel= | sed -e 's/^pkgrel=//')
+          VERSION=$(cat PKGBUILD | grep pkgver= | sed -e 's/^pkgver=//' | awk '{print $1}')-$(cat PKGBUILD | grep pkgrel= | sed -e 's/^pkgrel=//' | awk '{print $1}')
           echo "ARCHITECTURES=$(cat PKGBUILD | grep arch= | sed -e 's/^arch=(\(.*\))/\1/')" >>$GITHUB_ENV
           echo "VERSION=${VERSION}" >>$GITHUB_ENV
           git fetch --tags
