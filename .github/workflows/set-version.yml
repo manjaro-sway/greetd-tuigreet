@@ -20,8 +20,8 @@ jobs:
           VERSION: ${{ github.event.client_payload.version }}
           MD5: ${{ github.event.client_payload.md5 }}
         run: |
-          sed -i "/pkgver=/c\pkgver=${VERSION}" PKGBUILD
-          sed -i "/_sourcemd5=/c\_sourcemd5=${MD5}" PKGBUILD
+          [ -n "$VERSION" ] && sed -i "/pkgver=/c\pkgver=${VERSION}" PKGBUILD || exit 0
+          [ -n "$MD5" ] && sed -i "/_sourcemd5=/c\_sourcemd5=${MD5}" PKGBUILD || exit 0
       - 
         name: commit
         run: |
