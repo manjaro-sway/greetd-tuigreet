@@ -72,7 +72,6 @@ jobs:
               sudo -u builder gpg --keyserver keys.openpgp.org --recv-key $(echo ${ADDITIONAL_GPG})
               pacman-key --keyserver keys.openpgp.org --recv-keys $(echo ${ADDITIONAL_GPG})
             fi
-            pacman -Syy
             sed -i '/^\[core\]/i \[manjaro-sway\]\nSigLevel = PackageRequired\nServer = https://packages.manjaro-sway.download/$arch\n' /etc/pacman.conf
             pacman-mirrors --geoip
           run: |
