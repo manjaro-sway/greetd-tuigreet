@@ -17,6 +17,7 @@ jobs:
       uses: actions/checkout@v2.3.4
       with:
         token: ${{ secrets.PUSH_AND_TRIGGER }}
+        fetch-depth: 0
     - 
       name: add ssh pk
       if: ${{ contains(env.UPSTREAM_GIT, 'ssh') }}
@@ -29,10 +30,4 @@ jobs:
       run: |
         git remote add upstream ${UPSTREAM_GIT}
         git fetch upstream
-        git merge-base --is-ancestor $(git branch --show-current) upstream/$(git branch --show-current) && exit 1 || exit 0
-    - 
-      name: rebase
-      if: ${{ failure() }}
-      run: |
-        git rebase upstream/$(git branch --show-current)
-        git push --force-with-lease
+        git rebase upstream/$(git branch --show-current) && git push --force-with-lease
