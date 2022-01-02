@@ -2,6 +2,11 @@ name: pkgbuild
 
 on:
   workflow_dispatch:
+    inputs:
+      force-update:
+        description: 'update artifacts'
+        required: false
+        default: 'false'
   push:
     branches:
       - master
@@ -12,14 +17,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        pkgbuild: ["PKGBUILD.any", "PKGBUILD.multi"]
         archlinux_arch: [aarch64, x86_64]
         include:
           - archlinux_arch: aarch64
             docker_arch: aarch64
           - archlinux_arch: x86_64
             docker_arch: amd64
-    name: ${{ matrix.distro }} ${{ matrix.arch }}
+    name: pkgbuild for ${{ matrix.archlinux_arch }}
     steps:
       - name: pkgbuild
         uses: Manjaro-Sway/manjaro-package-action@main
@@ -30,4 +34,4 @@ jobs:
           gpg_signing_key_base64: ${{ secrets.GPG_SECRET_KEY_BASE64 }}
           pkgbuild: ${{ matrix.pkgbuild }}
           dispatch-token: ${{ secrets.DISPATCH }}
-          force-update: true
+          force-update: ${{ github.event.inputs.force-update }}
