@@ -41,6 +41,6 @@ jobs:
         token: ${{ secrets.TELEGRAM_TOKEN }}
         disable_web_page_preview: true
         message: |
-          Failed to rebase ${{ github.repository }} onto ${UPSTREAM_GIT}
+          Failed to rebase ${{ github.repository }} onto ${{ env.UPSTREAM_GIT }}
           
           Check pipeline: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
