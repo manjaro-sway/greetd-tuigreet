@@ -2,7 +2,7 @@
 
 pkgname=greetd-tuigreet
 pkgver=0.7.1
-pkgrel=2
+pkgrel=3
 
 pkgdesc='A console UI greeter for greetd'
 url='https://github.com/apognu/tuigreet'
