@@ -33,14 +33,3 @@ jobs:
         git config --global user.email "info@manjaro-sway.download"
         git config --global user.name "Manjaro Sway"
         git rebase upstream/$(git branch --show-current) && git push --force-with-lease
-    - name: telegram
-      if: failure()
-      uses: appleboy/telegram-action@master
-      with:
-        to: ${{ secrets.TELEGRAM_TO }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        disable_web_page_preview: true
-        message: |
-          Failed to rebase ${{ github.repository }} onto ${{ env.UPSTREAM_GIT }}
-          
-          Check pipeline: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
